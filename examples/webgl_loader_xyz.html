@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Визуализация</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+
+	<body>
+
+
+		<label class="container">  ground
+			<input class="container-input" type="checkbox" data-index="2" checked>
+			<span class="checkmark"></span>
+		</label>
+
+		<label class="container">low vegetation
+			<input class="container-input"  type="checkbox" data-index="3" checked>
+			<span class="checkmark"></span>
+		</label>
+
+		<label class="container">medium vegetation
+			<input class="container-input"  type="checkbox" data-index="4" checked>
+			<span class="checkmark"></span>
+		</label>
+		<label class="container">tall vegetation
+			<input class="container-input"  type="checkbox" data-index="5" checked>
+			<span class="checkmark"></span>
+		</label>
+		<label class="container">roof
+			<input class="container-input"  type="checkbox" data-index="6" checked>
+			<span class="checkmark"></span>
+		</label>
+		<label class="container">false reflection
+			<input class="container-input"  type="checkbox" data-index="7">
+			<span class="checkmark"></span>
+		</label>
+		<input type="file" id="fileInput">
+
+		<script>
+
+
+		</script>
+
+		<script type="text/javascript" src=" https://code.jquery.com/jquery-1.11.2.js "></script>
+<!--		<script src="./js/controls/OrbitControls.js"></script>-->
+
+		<script type="module" src="OrbitControls.js"></script>
+
+		<script>
+			window.selectedGroups = Array.from(document.querySelectorAll(".container-input")).filter(el => el.checked).map(el => $(el).data("index"))
+			console.log(window.selectedGroups)
+			$(".container-input").change(function() {
+				$("body canvas").remove();
+				// alert("hello");
+				window.selectedGroups = Array.from(document.querySelectorAll(".container-input")).filter(el=>el.checked).map(el=>$(el).data("index"))
+				window.globalInit();
+				window.globalAnimate();
+			})
+			// window.selectedGroups = [1,2];
+		</script>
+
+
+
+		<script type="module">
+
+
+
+			import * as THREE from '../build/three.module.js';
+
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+
+			import { XYZLoader } from './jsm/loaders/XYZLoader.js';
+
+			let camera, scene, renderer, clock, controls;
+
+			let points;
+
+			// init();
+			// animate();
+
+			window.loader = new XYZLoader();
+
+			window.globalAnimate = animate;
+			window.globalInit = init;
+			function init() {
+
+				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 0.01, 200 );
+				camera.position.set( 70, 57, 70 );
+
+				scene = new THREE.Scene();
+				window.globalScene = scene;
+
+				// controls
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+				// let controls = new OrbitControls(camera, renderer.domElement);
+
+				controls = new OrbitControls(camera, renderer.domElement);
+
+				controls.listenToKeyEvents( window ); // optional
+
+				//controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
+
+				controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+				controls.dampingFactor = 0.05;
+
+				controls.screenSpacePanning = false;
+
+				controls.minDistance = 100;
+				controls.maxDistance = 500;
+
+				controls.maxPolarAngle = Math.PI / 2;
+
+				scene.add( camera );
+				camera.lookAt( scene.position );
+
+				clock = new THREE.Clock();
+
+				const loader = new XYZLoader();
+
+				loader.load( 'models/xyz/text.xyz', function ( geometry ) {
+					console.log(geometry)
+					geometry.center();
+					geometry.rotateX(-1.5);
+
+					const vertexColors = ( geometry.hasAttribute( 'color' ) === true );
+
+					const material = new THREE.PointsMaterial( { size: 0.9, vertexColors: vertexColors } );
+
+					points = new THREE.Points( geometry, material );
+					scene.add( points );
+
+				} );
+
+				//
+
+
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			let fileInput = document.querySelector('#fileInput')
+
+			fileInput.addEventListener('change', (e) => {
+				// alert('hello');
+				// $("body canvas").remove();
+				readFile(e);
+			})
+
+			function readFile(evt)
+			{
+				var fileObject = evt.target.files[0];
+				var reader = new FileReader();
+				reader.onload = function ()
+				{
+					scene.clear()
+					var loader = new XYZLoader();
+					// alert(this.result)
+					window.globalResult = this.result;
+					var geometry = loader.parse(this.result);
+					geometry.center();
+					geometry.rotateX(-1.5);
+
+					const vertexColors = ( geometry.hasAttribute( 'color' ) === true );
+
+					const material = new THREE.PointsMaterial( { size: 0.9, vertexColors: vertexColors } );
+
+					points = new THREE.Points( geometry, material );
+					scene.add( points );
+				};
+				reader.readAsText(fileObject)
+			}
+			// function readFile(input) {
+			// 	let file = input.files[0];
+			//
+			// 	const blob = {'xyzModel.xyz': file}
+			// 	const manager = new THREE.LoadingManager();
+			//
+			// 	const objectURLs = []
+			// 	manager.setURLModifier( (url) => {
+			// 		url = URL.createObjectURL( blob[ url ])
+			// 		objectURLs.push( url )
+			//
+			// 		return url;
+			// 	})
+			//
+			// 	const loader = new XYZLoader();
+			//
+			// 	loader.load( 'xyzModel.xyz', function ( geometry ) {
+			// 		console.log(geometry)
+			// 		geometry.center();
+			// 		geometry.rotateX(-1.5);
+			//
+			// 		const vertexColors = ( geometry.hasAttribute( 'color' ) === true );
+			//
+			// 		const material = new THREE.PointsMaterial( { size: 0.9, vertexColors: vertexColors } );
+			//
+			// 		points = new THREE.Points( geometry, material );
+			// 		scene.add( points );
+			//
+			// 	} );
+			// }
+
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				// requestAnimationFrame( animate );
+				// controls.update();
+				// renderer.render(scene,camera);
+				requestAnimationFrame(animate);
+
+				const delta = 1;
+				// alert(clock.getDelta());
+				if ( points ) {
+
+					// points.rotation.x += delta * 0.0002;
+					// points.rotation.y += delta * 0.0005;
+
+				}
+				//
+				// controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+				//
+				// render();
+
+				renderer.render( scene, camera );
+
+			}
+			//
+			// function render() {
+			//
+			// 	renderer.render( scene, camera );
+			//
+			// }
+
+			window.globalInit();
+			window.globalAnimate();
+
+		</script>
+
+	</body>
+</html>
